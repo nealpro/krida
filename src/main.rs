@@ -7,9 +7,9 @@ use std::env;
 use std::path;
 
 // Define the size of the grid.
-const GRID_WIDTH: usize = 80;
-const GRID_HEIGHT: usize = 60;
-const CELL_SIZE: f32 = 10.0;
+const GRID_WIDTH: usize = 120; // Alternatively 80
+const GRID_HEIGHT: usize = 90; // Alternatively 60
+const CELL_SIZE: f32 = 15.0; // Alternatively 10.0
 
 /// Struct representing the game state.
 struct MainState {
@@ -175,7 +175,7 @@ pub fn main() -> GameResult {
         (GRID_WIDTH as f32) * CELL_SIZE,
         (GRID_HEIGHT as f32) * CELL_SIZE,
     );
-    let cb = ContextBuilder::new("krida", "Your Name")
+    let cb = ContextBuilder::new("krida", "nealpro")
         .window_setup(conf::WindowSetup::default().title("Krida - Game of Life"))
         .window_mode(conf::WindowMode::default().dimensions(grid_width, grid_height))
         .add_resource_path(resource_dir);
