@@ -5,6 +5,7 @@ use ggez::graphics::{self, Color, Canvas, Mesh, Rect};
 use ggez::{Context, ContextBuilder, GameResult};
 use std::env;
 use std::path;
+use rand::random;
 
 // Define the size of the grid.
 const GRID_WIDTH: usize = 120; // Alternatively 80
@@ -40,6 +41,11 @@ impl MainState {
     /// Count the live neighbors of a cell.
     fn live_neighbor_count(&self, x: usize, y: usize) -> usize {
         let mut count = 0;
+        // Check the 3x3 grid around the cell
+        // The following code wraps around the edges of the grid.
+        // This is a common technique in Game of Life implementations.
+        // However, it is not the only way to handle the edges.
+        // Infact, the more consistent way is to ignore the edges, because the Game of Life is played on an infinite grid.
         let xs = [x.wrapping_sub(1), x, x + 1];
         let ys = [y.wrapping_sub(1), y, y + 1];
 
@@ -89,6 +95,28 @@ impl MainState {
     fn toggle_cell(&mut self, x: usize, y: usize) {
         if x < GRID_WIDTH && y < GRID_HEIGHT {
             self.grid[y][x] = !self.grid[y][x];
+        }
+    }
+
+    /// Set cells to a random state
+    /// This is useful for testing the game
+    /// and for creating interesting patterns.
+    fn randomize(&mut self) {
+        for y in 0..GRID_HEIGHT {
+            for x in 0..GRID_WIDTH {
+                self.grid[y][x] = random();
+            }
+        }
+    }
+
+    /// Set cells to a random state, but with a much lower probability of being alive.
+    /// This is useful for testing the game
+    /// and for creating interesting patterns.
+    fn randomize_sparse(&mut self) {
+        for y in 0..GRID_HEIGHT {
+            for x in 0..GRID_WIDTH {
+                self.grid[y][x] = random::<f32>() < 0.1;
+            }
         }
     }
 }
@@ -156,6 +184,14 @@ impl EventHandler for MainState {
             Some(KeyCode::Escape) => {
                 // Quit the game
                 _ctx.request_quit();
+            }
+            Some(KeyCode::P) => {
+                // Randomize the grid
+                self.randomize();
+            }
+            Some(KeyCode::R) => {
+                // Randomize the grid sparsely
+                self.randomize_sparse();
             }
             _ => (),
         }
