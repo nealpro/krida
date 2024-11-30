@@ -142,7 +142,8 @@ impl MainState {
 
     /// Decrease the update delay if it is greater than the minimum delay
     fn decrease_update_delay(&mut self) {
-        if self.update_delay > DEFAULT_UPDATE_DELAY && self.update_delay > self.change_update_delay
+        if self.update_delay > DEFAULT_UPDATE_DELAY
+            && (self.update_delay - self.change_update_delay) > DEFAULT_UPDATE_DELAY
         {
             self.update_delay -= self.change_update_delay;
         }
@@ -151,6 +152,7 @@ impl MainState {
     /// Reset update delay to default
     fn reset_update_delay(&mut self) {
         self.update_delay = DEFAULT_UPDATE_DELAY;
+        self.change_update_delay = DEFAULT_UPDATE_DELAY;
     }
 }
 
