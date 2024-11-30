@@ -1,22 +1,28 @@
 use ggez::conf;
 use ggez::event::{self, EventHandler};
 use ggez::glam::*;
-use ggez::graphics::{self, Color, Canvas, Mesh, Rect};
+use ggez::graphics::{self, Canvas, Color, Mesh, Rect};
+use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
+use rand::random;
 use std::env;
 use std::path;
-use rand::random;
+use std::time::Duration;
 
 // Define the size of the grid.
 const GRID_WIDTH: usize = 120; // Alternatively 80
 const GRID_HEIGHT: usize = 90; // Alternatively 60
 const CELL_SIZE: f32 = 15.0; // Alternatively 10.0
+const DEFAULT_UPDATE_DELAY_MILISECONDS: u64 = 100;
+const DEFAULT_UPDATE_DELAY: Duration = Duration::from_millis(DEFAULT_UPDATE_DELAY_MILISECONDS);
 
 /// Struct representing the game state.
 struct MainState {
     grid: Vec<Vec<bool>>,
     next_grid: Vec<Vec<bool>>,
     paused: bool,
+    update_delay: Duration,
+    change_update_delay: Duration,
 }
 
 impl MainState {
@@ -26,6 +32,8 @@ impl MainState {
             grid: vec![vec![false; GRID_WIDTH]; GRID_HEIGHT],
             next_grid: vec![vec![false; GRID_WIDTH]; GRID_HEIGHT],
             paused: true, // Start in paused mode to allow pattern setup
+            update_delay: DEFAULT_UPDATE_DELAY,
+            change_update_delay: DEFAULT_UPDATE_DELAY,
         };
 
         // Initialize the grid with a simple pattern (e.g., a glider)
@@ -99,8 +107,6 @@ impl MainState {
     }
 
     /// Set cells to a random state
-    /// This is useful for testing the game
-    /// and for creating interesting patterns.
     fn randomize(&mut self) {
         for y in 0..GRID_HEIGHT {
             for x in 0..GRID_WIDTH {
@@ -109,9 +115,7 @@ impl MainState {
         }
     }
 
-    /// Set cells to a random state, but with a much lower probability of being alive.
-    /// This is useful for testing the game
-    /// and for creating interesting patterns.
+    /// Set cells to a random state, but with a much lower probability of being alive
     fn randomize_sparse(&mut self) {
         for y in 0..GRID_HEIGHT {
             for x in 0..GRID_WIDTH {
@@ -119,13 +123,46 @@ impl MainState {
             }
         }
     }
+
+    /// Decrease the update delay step
+    fn decrease_update_delay_step(&mut self) {
+        if self.change_update_delay > Duration::from_millis(10) {
+            self.change_update_delay -= Duration::from_millis(10);
+        }
+    }
+
+    /// Increase the update delay step
+    fn increase_update_delay_step(&mut self) {
+        if self.change_update_delay < Duration::from_millis(100) {
+            self.change_update_delay += Duration::from_millis(10);
+        }
+    }
+
+    /// Increase the update delay
+    fn increase_update_delay(&mut self) {
+        self.update_delay += self.change_update_delay;
+    }
+
+    /// Decrease the update delay if it is greater than the minimum delay
+    fn decrease_update_delay(&mut self) {
+        if self.update_delay > DEFAULT_UPDATE_DELAY {
+            self.update_delay -= self.change_update_delay;
+        }
+    }
+
+    /// Reset update delay to default
+    fn reset_update_delay(&mut self) {
+        self.update_delay = DEFAULT_UPDATE_DELAY;
+    }
 }
 
 impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         if !self.paused {
             self.update_grid();
+            timer::sleep(self.update_delay);
         }
+
         Ok(())
     }
 
@@ -142,7 +179,8 @@ impl EventHandler for MainState {
                         CELL_SIZE,
                     );
 
-                    let cell = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), rect, Color::WHITE)?;
+                    let cell =
+                        Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), rect, Color::WHITE)?;
                     canvas.draw(&cell, graphics::DrawParam::default());
                 }
             }
@@ -192,6 +230,26 @@ impl EventHandler for MainState {
             Some(KeyCode::R) => {
                 // Randomize the grid sparsely
                 self.randomize_sparse();
+            }
+            Some(KeyCode::Up) => {
+                // Increase the update delay
+                self.increase_update_delay();
+            }
+            Some(KeyCode::Down) => {
+                // Decrease the update delay
+                self.decrease_update_delay();
+            }
+            Some(KeyCode::RShift) => {
+                // Reset the update delay
+                self.reset_update_delay();
+            }
+            Some(KeyCode::Right) => {
+                // Increase the update delay step
+                self.increase_update_delay_step();
+            }
+            Some(KeyCode::Left) => {
+                // Decrease the update delay step
+                self.decrease_update_delay_step();
             }
             _ => (),
         }
